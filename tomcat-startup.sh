@@ -41,8 +41,8 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-gsutil cp gs://gcp-hw-app-bucket/sample.war /opt/tomcat/webapps/
-chown tomcat:tomcat /opt/tomcat/webapps/sample.war
+sudo gsutil cp gs://gcp-hwww-app-bucket/sample.war /opt/tomcat/webapps/
+sudo chown tomcat:tomcat /opt/tomcat/webapps/sample.war
 
 sudo systemctl daemon-reload
 sudo systemctl start tomcat
