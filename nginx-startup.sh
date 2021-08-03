@@ -3,6 +3,8 @@
 sudo apt update
 sudo apt install nginx -y
 
+LB_INTERNAL_IP=$(curl http://metadata/computeMetadata/v1/instance/attributes/LB_INTERNAL_IP -H "Metadata-Flavor: Google")
+
 cat << EOF > /etc/nginx/sites-enabled/default
 
 server {
@@ -21,10 +23,6 @@ server {
                 # as directory, then fall back to displaying a 404.
                 proxy_pass $LB_INTERNAL_IP:8080;
                 try_files $uri $uri/ =404;
-        }
-
-        location /demo/ {
-            proxy_pass $LB_INTERNAL_IP:8080/sample/;
         }
 
         location /img/picture.jpg {
