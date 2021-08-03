@@ -5,7 +5,7 @@ sudo apt install default-jdk curl -y
 sudo groupadd tomcat
 sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
 cd /tmp
-curl -O 'https://apache.paket.ua/tomcat/tomcat-9/v9.0.50/bin/apache-tomcat-9.0.50.tar.gz'
+curl -O 'https://downloads.apache.org/tomcat/tomcat-9/v9.0.50/bin/apache-tomcat-9.0.50.tar.gz'
 sudo mkdir /opt/tomcat
 sudo tar -xzvf apache-tomcat-9*tar.gz -C /opt/tomcat --strip-components=1
 cd /opt/tomcat
@@ -41,7 +41,7 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
-sudo gsutil cp gs://gcp-hwww-app-bucket/sample.war /opt/tomcat/webapps/
+sudo gsutil cp gs://gcp-homework-app-bucket/sample.war /opt/tomcat/webapps/
 sudo chown tomcat:tomcat /opt/tomcat/webapps/sample.war
 
 sudo systemctl daemon-reload
