@@ -134,7 +134,6 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-backend-gr
 
 ## 4. create LB
 
-- here i created LB through console..below are commented lines i was trying to recreate this via CLI
 
 ![tomcat lb](screens/Screenshot%202021-08-04%20at%2013.39.00.png)
 
@@ -211,7 +210,7 @@ gcloud compute instance-groups managed create homework-frontend-group-1 \
     --zone=us-central1-a
 
 # create autoscaling policy by CPU
-gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-group-1" \ 
+gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-group-1" \
     --zone "us-central1-a" \
     --cool-down-period "60" \
     --max-num-replicas "4" \
@@ -220,8 +219,6 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-g
     --mode "on"
 
 ```
-
-- here i created LB for Nginx group, through console..below recreated via CLI
 
 ![nginx lb](screens/Screenshot%202021-08-04%20at%2013.39.48.png)
 
@@ -235,7 +232,7 @@ gcloud compute health-checks create http homework-nginx-health-check \
 gcloud compute backend-services create homework-web-backend-service \
     --protocol=HTTP \
     --port-name=http \
-    --health-checks=http-basic-check \
+    --health-checks=homework-nginx-health-check \
     --global
 
 # add instance group to backend
@@ -281,7 +278,7 @@ gcloud logging sinks create homework-log-sink storage.googleapis.com/gcp-homewor
     --log-filter='resource.type="gce_instance" AND log_name="projects/homework-1-321812/logs/nginx-access" AND log_name="projects/homework-1-321812/logs/nginx-access"'
 
 # add sink serviceaccount as admin of log bucket
-gsutil iam ch $(gcloud logging sinks describe homework-log-sink2 --format="value(writerIdentity)"):roles/storage.objectAdmin gs://gcp-homework-log-bucket123
+gsutil iam ch $(gcloud logging sinks describe homework-log-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://gcp-homework-log-bucket123
 
 ```
 
