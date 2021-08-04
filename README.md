@@ -30,7 +30,7 @@ gsutil cp Wallpaper-16-10.png gs://gcp-homework-web-bucket123
 #make web bucket public
 gsutil iam ch allUsers:roles/storage.legacyObjectReader gs://gcp-homework-web-bucket123
 
-# create vpc and 2 subnets
+# create vpc and 2 subnets, and proxy-only subnet
 gcloud compute networks create homework-vpc \
     --subnet-mode=custom \
     --mtu=1460 \
@@ -45,6 +45,13 @@ gcloud compute networks subnets create homework-web-subnet \
     --range=10.0.2.0/24 \
     --network=homework-vpc \
     --region=us-central1
+
+gcloud compute networks subnets create homework-proxy-subnet \
+    --purpose=INTERNAL_HTTPS_LOAD_BALANCER \
+    --role=ACTIVE \
+    --region=us-central1 \
+    --network=homework-vpc \
+    --range=10.0.0.0/24
 
 # add firewall rule to allow 8080 from vpc instances
 gcloud compute firewall-rules create homework-allow-tomcat-ingress \
@@ -134,48 +141,49 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-backend-gr
 ```bash
 
 # add named 8080 port
-gcloud compute instance-groups managed set-named-ports "homework-backend-group-1" --zone "us-central1-a" --named-ports=tomcat-service:8080
+gcloud compute instance-groups managed set-named-ports "homework-backend-group-1" \
+    --zone "us-central1-a" \
+    --named-ports=tomcat-service:8080
 
-# reserve address for LB
-# gcloud compute addresses create homework-backend-lb-ipv4-1 \
-#     --ip-version=IPV4 \
-#     --global
 
-# get that address
-# LB_BE_IP=$(gcloud compute addresses describe homework-backend-lb-ipv4-1    --format="get(address)"  --global)
-
-# create health check for
-# gcloud compute health-checks create http homework-tomcat-check --port 8080
+# create health check for tomcat
+gcloud compute health-checks create tcp homework-tomcat-check --port 8080
 
 # backend service 
-# gcloud compute backend-services create homework-tomcat-backend-service \
-#     --protocol=HTTP \
-#     --port-name=tomcat-service \
-#     --health-checks=homework-tomcat-check \
-#     --global
+gcloud compute backend-services create homework-tomcat-backend-service \
+    --load-balancing-scheme=INTERNAL_MANAGED \
+    --protocol=HTTP \
+    --port-name=tomcat-service \
+    --health-checks=homework-tomcat-check \
+    --region=us-central1
 
 # add backend service to instance group
-# gcloud compute backend-services add-backend homework-tomcat-backend-service \
-#     --instance-group=homework-backend-group-1 \
-#     --instance-group-zone=us-central1-a \
-#     --global
+gcloud compute backend-services add-backend homework-tomcat-backend-service \
+    --instance-group=homework-backend-group-1 \
+    --instance-group-zone=us-central1-a \
+    --region=us-central1
 
 # url map
-# gcloud compute url-maps create homework-backend-url-map-http \
-#     --default-service homework-tomcat-backend-service
+gcloud compute url-maps create homework-tomcat-frontend \
+  --default-service=homework-tomcat-backend-service \
+  --region=us-central1
 
-# # proxy
-# gcloud compute target-http-proxies create homework-tomcat-http-lb-proxy \
-#     --url-map=homework-backend-url-map-http
+# proxy
+gcloud compute target-http-proxies create homework-backend-lb-proxy \
+  --url-map=homework-tomcat-frontend \
+  --url-map-region=us-central1 \
+  --region=us-central1
 
-# # forwarding rule
-# gcloud compute forwarding-rules create homework-backend-http-content-rule \
-#     --address=homework-backend-lb-ipv4-1 \
-#     --global \
-#     --target-http-proxy=homework-tomcat-http-lb-proxy \
-#     --ports=8080
-
-
+# forwarding rule
+gcloud compute forwarding-rules create homework-tomcat-frontend-lb \
+  --load-balancing-scheme=INTERNAL_MANAGED \
+  --network=homework-vpc \
+  --subnet=homework-app-subnet \
+  --address=10.0.1.10 \
+  --ports=8080 \
+  --region=us-central1 \
+  --target-http-proxy=homework-backend-lb-proxy \
+  --target-http-proxy-region=us-central1
 
 ```
 
@@ -183,16 +191,11 @@ gcloud compute instance-groups managed set-named-ports "homework-backend-group-1
 
 ```bash
 
-# store internal LB Ip address in variable
-# LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend \
-# --region=us-central1 \
-# --format="value(IPAddress)")
-
 # create instance template for Nginx
 gcloud compute instance-templates create homework-frontend-template \
     --machine-type=g1-small \
     --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-web-subnet \
-    --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/nginx-startup.sh,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend --region=us-central1 --format="value(IPAddress)") \
+    --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/nginx-startup.sh,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
     --region=us-central1 \
     --tags=homework-frontend-tag,allow-health-check \
     --boot-disk-size=10GB \
@@ -218,16 +221,48 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-g
 
 ```
 
-- here i created LB for Nginx group, through console..
+- here i created LB for Nginx group, through console..below recreated via CLI
 
 ![nginx lb](screens/Screenshot%202021-08-04%20at%2013.39.48.png)
 
 ```bash
 
+# create nginx health check
+gcloud compute health-checks create http homework-nginx-health-check \
+    --port 80
+
+# nginx backend service create
+gcloud compute backend-services create homework-web-backend-service \
+    --protocol=HTTP \
+    --port-name=http \
+    --health-checks=http-basic-check \
+    --global
+
+# add instance group to backend
+gcloud compute backend-services add-backend homework-web-backend-service \
+    --instance-group=homework-frontend-group-1 \
+    --instance-group-zone=us-central1-a \
+    --global
+
 # get external LB ip address
-gcloud compute forwarding-rules describe homework-nginx-frontend-service \
+gcloud compute addresses create homework-nginx-lb-ip \
+    --ip-version=IPV4 \
+    --global
+
+# url map
+gcloud compute url-maps create homework-nginx-frontend \
+    --default-service homework-web-backend-service
+
+# proxy
+gcloud compute target-http-proxies create homework-frontend-lb-proxy \
+    --url-map=homework-nginx-frontend
+
+# forwarding rule
+gcloud compute forwarding-rules create http-content-rule \
+    --address=homework-nginx-lb-ip \
     --global \
-    --format="value(IPAddress)"
+    --target-http-proxy=homework-frontend-lb-proxy \
+    --ports=80
 
 ```
 
@@ -241,9 +276,11 @@ gcloud compute forwarding-rules describe homework-nginx-frontend-service \
 
 ```bash
 
+# create sink
 gcloud logging sinks create homework-log-sink storage.googleapis.com/gcp-homework-log-bucket123 \
     --log-filter='resource.type="gce_instance" AND log_name="projects/homework-1-321812/logs/nginx-access" AND log_name="projects/homework-1-321812/logs/nginx-access"'
 
+# add sink serviceaccount as admin of log bucket
 gsutil iam ch $(gcloud logging sinks describe homework-log-sink2 --format="value(writerIdentity)"):roles/storage.objectAdmin gs://gcp-homework-log-bucket123
 
 ```
