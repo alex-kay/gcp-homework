@@ -150,4 +150,13 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-g
 
 ```
 
+- here i created LB for Nginx group, through console..
+
+```bash
+
+# get external LB ip address
+gcloud compute forwarding-rules describe homework-nginx-frontend-service --global --format="value(IPAddress)"
+
+```
+
 ## 6. setup export of nginx logs to bucket/BigQuery

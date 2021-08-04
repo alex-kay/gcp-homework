@@ -2,6 +2,8 @@
 
 sudo apt update
 sudo apt install nginx -y
+curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
+sudo bash add-monitoring-agent-repo.sh --also-install
 
 LB_INTERNAL_IP=$(curl http://metadata/computeMetadata/v1/instance/attributes/LB_INTERNAL_IP -H "Metadata-Flavor: Google")
 
@@ -30,7 +32,7 @@ server {
                 proxy_pass http://$LB_INTERNAL_IP:8080/demo/;
         }
         location /img/picture.jpg {
-            proxy_pass https://storage.googleapis.com/gcp-homework-web-bucket/Wallpaper-16-10.png;
+                proxy_pass https://storage.googleapis.com/gcp-homework-web-bucket/Wallpaper-16-10.png;
         }
 
 }
