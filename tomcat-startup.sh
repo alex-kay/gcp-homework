@@ -43,7 +43,7 @@ EOF
 
 APP_BUCKET=$(curl http://metadata/computeMetadata/v1/instance/attributes/APP_BUCKET -H "Metadata-Flavor: Google")
 
-sudo gsutil cp "gs://$APP_BUCKET/sample.war /opt/tomcat/webapps/demo.war"
+sudo gsutil cp "gs://$APP_BUCKET/sample.war" "/opt/tomcat/webapps/demo.war"
 sudo chown tomcat:tomcat /opt/tomcat/webapps/demo.war
 
 sudo systemctl daemon-reload

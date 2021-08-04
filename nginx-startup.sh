@@ -21,10 +21,13 @@ server {
         location / {
                 # First attempt to serve request as file, then
                 # as directory, then fall back to displaying a 404.
-                proxy_pass $LB_INTERNAL_IP:8080;
                 try_files $uri $uri/ =404;
+                proxy_pass http://$LB_INTERNAL_IP:8080;
         }
-
+        location /demo/ {
+                proxy_http_version 1.1;
+                proxy_pass http://$LB_INTERNAL_IP:8080/demo/;
+        }
         location /img/picture.jpg {
             proxy_pass https://storage.googleapis.com/gcp-homework-web-bucket/Wallpaper-16-10.png;
         }
