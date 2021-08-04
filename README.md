@@ -19,6 +19,7 @@
 
 gsutil mb gs://gcp-homework-app-bucket123
 gsutil mb gs://gcp-homework-web-bucket123
+gsutil mb gs://gcp-homework-log-bucket123
 
 # move startup scripts, sample app and picture there
 gsutil cp *-startup.sh gs://gcp-homework-app-bucket123
@@ -65,8 +66,6 @@ gcloud compute firewall-rules create homework-allow-health-check \
 # create instance template for Tomcat
 gcloud compute instance-templates create homework-backend-template --machine-type=g1-small --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-app-subnet --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/tomcat-startup.sh,APP_BUCKET=gcp-homework-app-bucket123 --region=us-central1 --tags=homework-backend-tag,allow-health-check --boot-disk-size=10GB --boot-disk-type=pd-balanced --boot-disk-device-name=homework-backend-template
 
-# gcloud beta compute instance-templates create homework-backend-template --machine-type=g1-small --subnet=projects/linuxacademypractice1/regions/us-central1/subnetworks/app-subnet --metadata=startup-script-url=https://storage.googleapis.com/gcp-hwww-app-bucket/tomcat-startup.sh --region=us-central1 --tags=homework-backend-tag  --boot-disk-size=10GB --boot-disk-type=pd-balanced --boot-disk-device-name=homework-backend-template
-
 ```
 
 ## 3. setup autoscaling by CPU (think about scale down)
@@ -83,6 +82,8 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-backend-gr
 
 ## 4. create LB
 
+- here i created LB through console..
+
 ```bash
 
 # add named 8080 port
@@ -97,20 +98,20 @@ gcloud compute instance-groups managed set-named-ports "homework-backend-group-1
 # LB_BE_IP=$(gcloud compute addresses describe homework-backend-lb-ipv4-1    --format="get(address)"  --global)
 
 # create health check for
-gcloud compute health-checks create http homework-tomcat-check --port 8080
+# gcloud compute health-checks create http homework-tomcat-check --port 8080
 
 # backend service 
-gcloud compute backend-services create homework-tomcat-backend-service \
-    --protocol=HTTP \
-    --port-name=tomcat-service \
-    --health-checks=homework-tomcat-check \
-    --global
+# gcloud compute backend-services create homework-tomcat-backend-service \
+#     --protocol=HTTP \
+#     --port-name=tomcat-service \
+#     --health-checks=homework-tomcat-check \
+#     --global
 
 # add backend service to instance group
-gcloud compute backend-services add-backend homework-tomcat-backend-service \
-    --instance-group=homework-backend-group-1 \
-    --instance-group-zone=us-central1-a \
-    --global
+# gcloud compute backend-services add-backend homework-tomcat-backend-service \
+#     --instance-group=homework-backend-group-1 \
+#     --instance-group-zone=us-central1-a \
+#     --global
 
 # url map
 # gcloud compute url-maps create homework-backend-url-map-http \
@@ -160,3 +161,9 @@ gcloud compute forwarding-rules describe homework-nginx-frontend-service --globa
 ```
 
 ## 6. setup export of nginx logs to bucket/BigQuery
+
+```bash
+
+gcloud logging sinks create homework-log-sink storage.googleapis.com/gcp-homework-log-bucket123 --log-filter='resource.type="gce_instance" AND log_name="projects/homework-1-321812/logs/nginx-access" AND log_name="projects/homework-1-321812/logs/nginx-access"'
+
+```
