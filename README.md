@@ -16,7 +16,6 @@
 
 #create buckets
 
-
 gsutil mb gs://gcp-homework-app-bucket123
 gsutil mb gs://gcp-homework-web-bucket123
 gsutil mb gs://gcp-homework-log-bucket123
@@ -32,20 +31,49 @@ gsutil cp Wallpaper-16-10.png gs://gcp-homework-web-bucket123
 gsutil iam ch allUsers:roles/storage.legacyObjectReader gs://gcp-homework-web-bucket123
 
 # create vpc and 2 subnets
-gcloud compute networks create homework-vpc --subnet-mode=custom --mtu=1460 --bgp-routing-mode=regional
+gcloud compute networks create homework-vpc \
+    --subnet-mode=custom \
+    --mtu=1460 \
+    --bgp-routing-mode=regional
 
-gcloud compute networks subnets create homework-app-subnet --range=10.0.1.0/24 --network=homework-vpc --region=us-central1
+gcloud compute networks subnets create homework-app-subnet \
+    --range=10.0.1.0/24 \
+    --network=homework-vpc \
+    --region=us-central1
 
-gcloud compute networks subnets create homework-web-subnet --range=10.0.2.0/24 --network=homework-vpc --region=us-central1
+gcloud compute networks subnets create homework-web-subnet \
+    --range=10.0.2.0/24 \
+    --network=homework-vpc \
+    --region=us-central1
 
 # add firewall rule to allow 8080 from vpc instances
-gcloud compute firewall-rules create homework-allow-tomcat-ingress --direction=INGRESS --priority=1000 --network=homework-vpc --action=ALLOW --rules=tcp:8080 --source-ranges=10.0.0.0/16 --target-tags=homework-backend-tag
+gcloud compute firewall-rules create homework-allow-tomcat-ingress \
+    --direction=INGRESS \
+    --priority=1000 \
+    --network=homework-vpc \
+    --action=ALLOW \
+    --rules=tcp:8080 \
+    --source-ranges=10.0.0.0/16 \
+    --target-tags=homework-backend-tag
 
 # add firewall rule for 80 for frontend 
-gcloud compute firewall-rules create homework-frontend-ingress --direction=INGRESS --priority=1000 --network=homework-vpc --action=ALLOW --rules=tcp:80 --source-ranges=0.0.0.0/0 --target-tags=homework-frontend-tag
+gcloud compute firewall-rules create homework-frontend-ingress \
+    --direction=INGRESS \
+    --priority=1000 \
+    --network=homework-vpc \
+    --action=ALLOW \
+    --rules=tcp:80 \
+    --source-ranges=0.0.0.0/0 \
+    --target-tags=homework-frontend-tag
 
 # add firewall rule for all instances SSH reachability
-gcloud compute firewall-rules create homework-allow-ssh --direction=INGRESS --priority=1000 --network=homework-vpc --action=ALLOW --rules=tcp:22 --source-ranges=0.0.0.0/0
+gcloud compute firewall-rules create homework-allow-ssh \
+    --direction=INGRESS \
+    --priority=1000 \
+    --network=homework-vpc \
+    --action=ALLOW \
+    --rules=tcp:22 \
+    --source-ranges=0.0.0.0/0
 
 # add firewall rule for health checks
 gcloud compute firewall-rules create homework-allow-health-check \
@@ -56,7 +84,6 @@ gcloud compute firewall-rules create homework-allow-health-check \
     --target-tags=allow-health-check \
     --rules=tcp:80,tcp:8080
 
-
 ```
 
 ## 2. create MIG for backend with installed tomcat and on boot download demo application from bucket
@@ -64,7 +91,15 @@ gcloud compute firewall-rules create homework-allow-health-check \
 ```bash
 
 # create instance template for Tomcat
-gcloud compute instance-templates create homework-backend-template --machine-type=g1-small --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-app-subnet --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/tomcat-startup.sh,APP_BUCKET=gcp-homework-app-bucket123 --region=us-central1 --tags=homework-backend-tag,allow-health-check --boot-disk-size=10GB --boot-disk-type=pd-balanced --boot-disk-device-name=homework-backend-template
+gcloud compute instance-templates create homework-backend-template \
+    --machine-type=g1-small \
+    --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-app-subnet \
+    --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/tomcat-startup.sh,APP_BUCKET=gcp-homework-app-bucket123 \
+    --region=us-central1 \
+    --tags=homework-backend-tag,allow-health-check \
+    --boot-disk-size=10GB \
+    --boot-disk-type=pd-balanced \
+    --boot-disk-device-name=homework-backend-template
 
 ```
 
@@ -73,10 +108,20 @@ gcloud compute instance-templates create homework-backend-template --machine-typ
 ```bash
 
 # create instance group for Tomcat
-gcloud compute instance-groups managed create homework-backend-group-1 --base-instance-name=homework-backend-group-1 --template=homework-backend-template --size=1 --zone=us-central1-a
+gcloud compute instance-groups managed create homework-backend-group-1 \
+    --base-instance-name=homework-backend-group-1 \
+    --template=homework-backend-template \
+    --size=1 \
+    --zone=us-central1-a
 
 # create autoscaling policy by CPU
-gcloud beta compute instance-groups managed set-autoscaling "homework-backend-group-1" --zone "us-central1-a" --cool-down-period "60" --max-num-replicas "4" --min-num-replicas "1" --target-cpu-utilization "0.6" --mode "on"
+gcloud beta compute instance-groups managed set-autoscaling "homework-backend-group-1" \
+    --zone "us-central1-a" \
+    --cool-down-period "60" \
+    --max-num-replicas "4" \
+    --min-num-replicas "1" \
+    --target-cpu-utilization "0.6" \
+    --mode "on"
 
 ```
 
@@ -139,17 +184,37 @@ gcloud compute instance-groups managed set-named-ports "homework-backend-group-1
 ```bash
 
 # store internal LB Ip address in variable
-# LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend --region=us-central1 --format="value(IPAddress)")
+# LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend \
+# --region=us-central1 \
+# --format="value(IPAddress)")
 
 # create instance template for Nginx
-gcloud compute instance-templates create homework-frontend-template --machine-type=g1-small --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-web-subnet --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/nginx-startup.sh,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend --region=us-central1 --format="value(IPAddress)") --region=us-central1 --tags=homework-frontend-tag,allow-health-check --boot-disk-size=10GB --boot-disk-type=pd-balanced --boot-disk-device-name=homework-frontend-template
+gcloud compute instance-templates create homework-frontend-template \
+    --machine-type=g1-small \
+    --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-web-subnet \
+    --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/nginx-startup.sh,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend --region=us-central1 --format="value(IPAddress)") \
+    --region=us-central1 \
+    --tags=homework-frontend-tag,allow-health-check \
+    --boot-disk-size=10GB \
+    --boot-disk-type=pd-balanced \
+    --boot-disk-device-name=homework-frontend-template
 
 
 # create instance group for Nginx
-gcloud compute instance-groups managed create homework-frontend-group-1 --base-instance-name=homework-frontend-group-1 --template=homework-frontend-template --size=1 --zone=us-central1-a
+gcloud compute instance-groups managed create homework-frontend-group-1 \
+    --base-instance-name=homework-frontend-group-1 \
+    --template=homework-frontend-template \
+    --size=1 \
+    --zone=us-central1-a
 
 # create autoscaling policy by CPU
-gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-group-1" --zone "us-central1-a" --cool-down-period "60" --max-num-replicas "4" --min-num-replicas "1" --target-cpu-utilization "0.6" --mode "on"
+gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-group-1" \ 
+    --zone "us-central1-a" \
+    --cool-down-period "60" \
+    --max-num-replicas "4" \
+    --min-num-replicas "1" \
+    --target-cpu-utilization "0.6" \
+    --mode "on"
 
 ```
 
@@ -160,7 +225,9 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-g
 ```bash
 
 # get external LB ip address
-gcloud compute forwarding-rules describe homework-nginx-frontend-service --global --format="value(IPAddress)"
+gcloud compute forwarding-rules describe homework-nginx-frontend-service \
+    --global \
+    --format="value(IPAddress)"
 
 ```
 
@@ -174,7 +241,8 @@ gcloud compute forwarding-rules describe homework-nginx-frontend-service --globa
 
 ```bash
 
-gcloud logging sinks create homework-log-sink storage.googleapis.com/gcp-homework-log-bucket123 --log-filter='resource.type="gce_instance" AND log_name="projects/homework-1-321812/logs/nginx-access" AND log_name="projects/homework-1-321812/logs/nginx-access"'
+gcloud logging sinks create homework-log-sink storage.googleapis.com/gcp-homework-log-bucket123 \
+    --log-filter='resource.type="gce_instance" AND log_name="projects/homework-1-321812/logs/nginx-access" AND log_name="projects/homework-1-321812/logs/nginx-access"'
 
 gsutil iam ch $(gcloud logging sinks describe homework-log-sink2 --format="value(writerIdentity)"):roles/storage.objectAdmin gs://gcp-homework-log-bucket123
 
