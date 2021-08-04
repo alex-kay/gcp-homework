@@ -23,6 +23,7 @@ server {
                 # as directory, then fall back to displaying a 404.
                 try_files $uri $uri/ =404;
                 proxy_pass http://$LB_INTERNAL_IP:8080;
+                proxy_http_version 1.1;
         }
         location /demo/ {
                 proxy_http_version 1.1;
