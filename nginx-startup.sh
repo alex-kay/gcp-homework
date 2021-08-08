@@ -3,6 +3,8 @@
 sudo apt update
 sudo apt install nginx -y
 
+# BEGIN install Stackdriver agents
+#
 curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
 sudo bash add-monitoring-agent-repo.sh --also-install
 
@@ -16,9 +18,11 @@ sudo service nginx reload
 (cd /etc/stackdriver/collectd.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/collectd.d/nginx.conf)
 
 sudo service stackdriver-agent restart
-
+#
+# END install Stackdriver agents
 
 LB_INTERNAL_IP=$(curl http://metadata/computeMetadata/v1/instance/attributes/LB_INTERNAL_IP -H "Metadata-Flavor: Google")
+WEB_BUCKET=$(curl http://metadata/computeMetadata/v1/instance/attributes/WEB_BUCKET -H "Metadata-Flavor: Google")
 
 cat << EOF > /etc/nginx/sites-enabled/default
 
@@ -45,7 +49,7 @@ server {
                 proxy_pass http://$LB_INTERNAL_IP:8080/demo/;
         }
         location /img/picture.jpg {
-                proxy_pass https://storage.googleapis.com/gcp-homework-web-bucket/Wallpaper-16-10.png;
+                proxy_pass https://storage.googleapis.com/$WEB_BUCKET/Wallpaper-16-10.png;
         }
 
 }

@@ -1,11 +1,22 @@
 #!/bin/bash
 
+# detecting OS distribution
+
+. /etc/os-release
+if [[ "$ID" == "centos" ]]; then
+    sudo yum install java-1.8.0-openjdk-devel
+    sudo useradd -m -U -d /opt/tomcat -s /bin/false tomcat
+elif [[ "$ID" == "debian" ]]; then
+    true
+fi
+
+
 sudo apt update
 sudo apt install default-jdk curl -y
 sudo groupadd tomcat
 sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
 cd /tmp
-curl -O 'https://downloads.apache.org/tomcat/tomcat-9/v9.0.50/bin/apache-tomcat-9.0.50.tar.gz'
+curl -O 'https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.50/bin/apache-tomcat-9.0.50.tar.gz'
 sudo mkdir /opt/tomcat
 sudo tar -xzvf apache-tomcat-9*tar.gz -C /opt/tomcat --strip-components=1
 cd /opt/tomcat

@@ -194,7 +194,7 @@ gcloud compute forwarding-rules create homework-tomcat-frontend-lb \
 gcloud compute instance-templates create homework-frontend-template \
     --machine-type=g1-small \
     --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-web-subnet \
-    --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/nginx-startup.sh,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
+    --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/nginx-startup.sh,WEB_BUCKET=gcp-homework-web-bucket123,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
     --region=us-central1 \
     --tags=homework-frontend-tag,allow-health-check \
     --boot-disk-size=10GB \
