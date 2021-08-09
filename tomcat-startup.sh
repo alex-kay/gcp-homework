@@ -1,18 +1,20 @@
 #!/bin/bash
 
-# detecting OS distribution
+# detecting OS distro and installing java
 
 . /etc/os-release
 if [[ "$ID" == "centos" ]]; then
-    sudo yum install java-1.8.0-openjdk-devel
-    sudo useradd -m -U -d /opt/tomcat -s /bin/false tomcat
+    sudo yum install java-1.8.0-openjdk-devel curl -y
+    J_HOME="/usr/lib/jvm/jre"
+    #...
 elif [[ "$ID" == "debian" ]]; then
-    true
+    sudo apt update
+    sudo apt install default-jdk curl -y
+    J_HOME="/usr/lib/jvm/java-1.11.0-openjdk-amd64"
 fi
 
+# installing tomcat
 
-sudo apt update
-sudo apt install default-jdk curl -y
 sudo groupadd tomcat
 sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
 cd /tmp
@@ -32,7 +34,7 @@ After=network.target
 [Service]
 Type=forking
 
-Environment=JAVA_HOME=/usr/lib/jvm/java-1.11.0-openjdk-amd64
+Environment=JAVA_HOME=$J_HOME
 Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
 Environment=CATALINA_HOME=/opt/tomcat
 Environment=CATALINA_BASE=/opt/tomcat

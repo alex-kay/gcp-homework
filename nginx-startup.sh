@@ -1,7 +1,17 @@
 #!/bin/bash
 
-sudo apt update
-sudo apt install nginx -y
+# detecting OS distro and installing nginx
+
+. /etc/os-release
+if [[ "$ID" == "centos" ]]; then
+        sudo yum install nginx -y
+        SITE_PATH="/etc/nginx/conf.d/default"
+elif [[ "$ID" == "debian" ]]; then
+        sudo apt update
+        sudo apt install nginx -y
+        SITE_PATH="/etc/nginx/sites-enabled/default"
+fi
+
 
 # BEGIN install Stackdriver agents
 #
@@ -24,7 +34,7 @@ sudo service stackdriver-agent restart
 LB_INTERNAL_IP=$(curl http://metadata/computeMetadata/v1/instance/attributes/LB_INTERNAL_IP -H "Metadata-Flavor: Google")
 WEB_BUCKET=$(curl http://metadata/computeMetadata/v1/instance/attributes/WEB_BUCKET -H "Metadata-Flavor: Google")
 
-cat << EOF > /etc/nginx/sites-enabled/default
+cat << EOF > $SITE_PATH
 
 server {
         listen 80 default_server;
@@ -50,6 +60,10 @@ server {
         }
         location /img/picture.jpg {
                 proxy_pass https://storage.googleapis.com/$WEB_BUCKET/Wallpaper-16-10.png;
+        }
+
+        location /g/ {
+                proxy_pass https://google.com;
         }
 
 }

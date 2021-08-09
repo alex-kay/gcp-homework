@@ -2,33 +2,43 @@
 
 ## steps
 
-1. Create bucket for application files and another one for static web files (think about permissions)
-2. create MIG for backend with installed tomcat and on boot download demo application from bucket
-3. setup autoscaling by CPU (think about scale down)
-4. create LB
-5. add one more MIG for frontend with nginx, by path /demo/ show demo app from bucket, by path /img/picture.jpg show file from bucket
-6. setup export of nginx logs to bucket/BigQuery
-7. SSL termination (bonus)
+1. ~~Create bucket for application files and another one for static web files (think about permissions)~~
+2. ~~create MIG for backend with installed tomcat and on boot download demo application from bucket~~
+3. ~~setup autoscaling by CPU (think about scale down)~~
+4. ~~create LB~~
+5. ~~add one more MIG for frontend with nginx, by path /demo/ show demo app from bucket, by path /img/picture.jpg show file from bucket~~
+6. ~~setup export of nginx logs to bucket~~/BigQuery
+7. Заменить агента для экспорта логов ( если был гугловский - переключится на стронее решение и наоборот )
+8. Заменить базовую операционную систему б группе бекенда ( ubuntu <-> centos )
+9. Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x
+10. Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес
+11. Почитать про pub/sub и события
 
 ## 1. Create bucket for application files and another one for static web files (think about permissions)
 
 ```bash
 
+# get project id to reference later
+GCLOUD_PROJECT=$(gcloud config get-value project)
+
+# create a timestamp to name buckets and reference later
+BUCKETS_NAME=gcp-homework-bucket-$(date +%s)
+
 #create buckets
 
-gsutil mb gs://gcp-homework-app-bucket123
-gsutil mb gs://gcp-homework-web-bucket123
-gsutil mb gs://gcp-homework-log-bucket123
+gsutil mb gs://app-$BUCKETS_NAME
+gsutil mb gs://web-$BUCKETS_NAME
+gsutil mb gs://log-$BUCKETS_NAME
 
 # move startup scripts, sample app and picture there
-gsutil cp *-startup.sh gs://gcp-homework-app-bucket123
+gsutil cp *-startup.sh gs://app-$BUCKETS_NAME
 wget https://tomcat.apache.org/tomcat-7.0-doc/appdev/sample/sample.war
-gsutil cp sample.war gs://gcp-homework-app-bucket123
+gsutil cp sample.war gs://app-$BUCKETS_NAME
 wget https://github.com/gregsramblings/google-cloud-4-words/raw/master/Wallpaper-16-10.png
-gsutil cp Wallpaper-16-10.png gs://gcp-homework-web-bucket123
+gsutil cp Wallpaper-16-10.png gs://web-$BUCKETS_NAME
 
 #make web bucket public
-gsutil iam ch allUsers:roles/storage.legacyObjectReader gs://gcp-homework-web-bucket123
+gsutil iam ch allUsers:roles/storage.legacyObjectReader gs://web-$BUCKETS_NAME
 
 # create vpc and 2 subnets, and proxy-only subnet
 gcloud compute networks create homework-vpc \
@@ -97,16 +107,31 @@ gcloud compute firewall-rules create homework-allow-health-check \
 
 ```bash
 
-# create instance template for Tomcat
+# create instance template for Tomcat (Default Debian 10 image)
 gcloud compute instance-templates create homework-backend-template \
     --machine-type=g1-small \
-    --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-app-subnet \
-    --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/tomcat-startup.sh,APP_BUCKET=gcp-homework-app-bucket123 \
+    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-app-subnet \
+    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
     --region=us-central1 \
     --tags=homework-backend-tag,allow-health-check \
     --boot-disk-size=10GB \
     --boot-disk-type=pd-balanced \
-    --boot-disk-device-name=homework-backend-template
+    --boot-disk-device-name=homework-backend-template \
+    --image=debian-10-buster-v20210721 \
+    --image-project=debian-cloud
+
+# or same, but with Centos 7 image
+gcloud compute instance-templates create homework-backend-template \
+    --machine-type=g1-small \
+    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-app-subnet \
+    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
+    --region=us-central1 \
+    --tags=homework-backend-tag,allow-health-check \
+    --boot-disk-size=10GB \
+    --boot-disk-type=pd-balanced \
+    --boot-disk-device-name=homework-backend-template \
+    --image=centos-7-v20210721 \
+    --image-project=centos-cloud
 
 ```
 
@@ -133,7 +158,6 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-backend-gr
 ```
 
 ## 4. create LB
-
 
 ![tomcat lb](screens/Screenshot%202021-08-04%20at%2013.39.00.png)
 
@@ -190,16 +214,31 @@ gcloud compute forwarding-rules create homework-tomcat-frontend-lb \
 
 ```bash
 
-# create instance template for Nginx
+# create instance template for Nginx (DEBIAN 10)
 gcloud compute instance-templates create homework-frontend-template \
     --machine-type=g1-small \
-    --subnet=projects/homework-1-321812/regions/us-central1/subnetworks/homework-web-subnet \
-    --metadata=startup-script-url=https://storage.googleapis.com/gcp-homework-app-bucket123/nginx-startup.sh,WEB_BUCKET=gcp-homework-web-bucket123,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
+    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-web-subnet \
+    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/nginx-startup.sh,WEB_BUCKET=web-$BUCKETS_NAME,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
     --region=us-central1 \
     --tags=homework-frontend-tag,allow-health-check \
     --boot-disk-size=10GB \
     --boot-disk-type=pd-balanced \
-    --boot-disk-device-name=homework-frontend-template
+    --boot-disk-device-name=homework-frontend-template \
+    --image=debian-10-buster-v20210721 \
+    --image-project=debian-cloud
+
+# create instance template for Nginx (CentOS 7)
+gcloud compute instance-templates create homework-frontend-template \
+    --machine-type=g1-small \
+    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-web-subnet \
+    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/nginx-startup.sh,WEB_BUCKET=web-$BUCKETS_NAME,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
+    --region=us-central1 \
+    --tags=homework-frontend-tag,allow-health-check \
+    --boot-disk-size=10GB \
+    --boot-disk-type=pd-balanced \
+    --boot-disk-device-name=homework-frontend-template \
+    --image=centos-7-v20210721 \
+    --image-project=centos-cloud
 
 
 # create instance group for Nginx
@@ -274,11 +313,11 @@ gcloud compute forwarding-rules create http-content-rule \
 ```bash
 
 # create sink
-gcloud logging sinks create homework-log-sink storage.googleapis.com/gcp-homework-log-bucket123 \
-    --log-filter='resource.type="gce_instance" AND log_name="projects/homework-1-321812/logs/nginx-access" AND log_name="projects/homework-1-321812/logs/nginx-access"'
+gcloud logging sinks create homework-log-sink storage.googleapis.com/log-$BUCKETS_NAME \
+    --log-filter='resource.type="gce_instance" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access"'
 
 # add sink serviceaccount as admin of log bucket
-gsutil iam ch $(gcloud logging sinks describe homework-log-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://gcp-homework-log-bucket123
+gsutil iam ch $(gcloud logging sinks describe homework-log-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://log-$BUCKETS_NAME
 
 ```
 
