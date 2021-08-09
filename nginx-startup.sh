@@ -5,7 +5,7 @@
 . /etc/os-release
 if [[ "$ID" == "centos" ]]; then
         sudo yum install nginx -y
-        SITE_PATH="/etc/nginx/conf.d/default"
+        SITE_PATH="/etc/nginx/conf.d/default.conf"
 elif [[ "$ID" == "debian" ]]; then
         sudo apt update
         sudo apt install nginx -y
@@ -60,10 +60,6 @@ server {
         }
         location /img/picture.jpg {
                 proxy_pass https://storage.googleapis.com/$WEB_BUCKET/Wallpaper-16-10.png;
-        }
-
-        location /g/ {
-                proxy_pass https://google.com;
         }
 
 }

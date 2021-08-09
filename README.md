@@ -114,7 +114,7 @@ gcloud compute instance-templates create homework-backend-template \
     --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
     --region=us-central1 \
     --tags=homework-backend-tag,allow-health-check \
-    --boot-disk-size=10GB \
+    --boot-disk-size=20GB \
     --boot-disk-type=pd-balanced \
     --boot-disk-device-name=homework-backend-template \
     --image=debian-10-buster-v20210721 \
@@ -127,7 +127,7 @@ gcloud compute instance-templates create homework-backend-template \
     --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
     --region=us-central1 \
     --tags=homework-backend-tag,allow-health-check \
-    --boot-disk-size=10GB \
+    --boot-disk-size=20GB \
     --boot-disk-type=pd-balanced \
     --boot-disk-device-name=homework-backend-template \
     --image=centos-7-v20210721 \
@@ -221,7 +221,7 @@ gcloud compute instance-templates create homework-frontend-template \
     --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/nginx-startup.sh,WEB_BUCKET=web-$BUCKETS_NAME,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
     --region=us-central1 \
     --tags=homework-frontend-tag,allow-health-check \
-    --boot-disk-size=10GB \
+    --boot-disk-size=20GB \
     --boot-disk-type=pd-balanced \
     --boot-disk-device-name=homework-frontend-template \
     --image=debian-10-buster-v20210721 \
@@ -234,7 +234,7 @@ gcloud compute instance-templates create homework-frontend-template \
     --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/nginx-startup.sh,WEB_BUCKET=web-$BUCKETS_NAME,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
     --region=us-central1 \
     --tags=homework-frontend-tag,allow-health-check \
-    --boot-disk-size=10GB \
+    --boot-disk-size=20GB \
     --boot-disk-type=pd-balanced \
     --boot-disk-device-name=homework-frontend-template \
     --image=centos-7-v20210721 \
