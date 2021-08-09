@@ -108,17 +108,17 @@ gcloud compute firewall-rules create homework-allow-health-check \
 ```bash
 
 # create instance template for Tomcat (Default Debian 10 image)
-gcloud compute instance-templates create homework-backend-template \
-    --machine-type=g1-small \
-    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-app-subnet \
-    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
-    --region=us-central1 \
-    --tags=homework-backend-tag,allow-health-check \
-    --boot-disk-size=20GB \
-    --boot-disk-type=pd-balanced \
-    --boot-disk-device-name=homework-backend-template \
-    --image=debian-10-buster-v20210721 \
-    --image-project=debian-cloud
+# gcloud compute instance-templates create homework-backend-template \
+#     --machine-type=g1-small \
+#     --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-app-subnet \
+#     --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
+#     --region=us-central1 \
+#     --tags=homework-backend-tag,allow-health-check \
+#     --boot-disk-size=20GB \
+#     --boot-disk-type=pd-balanced \
+#     --boot-disk-device-name=homework-backend-template \
+#     --image=debian-10-buster-v20210721 \
+#     --image-project=debian-cloud
 
 # or same, but with Centos 7 image
 gcloud compute instance-templates create homework-backend-template \
@@ -214,7 +214,7 @@ gcloud compute forwarding-rules create homework-tomcat-frontend-lb \
 
 ```bash
 
-# create instance template for Nginx (DEBIAN 10)
+# create instance template for Nginx
 gcloud compute instance-templates create homework-frontend-template \
     --machine-type=g1-small \
     --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-web-subnet \
@@ -223,22 +223,7 @@ gcloud compute instance-templates create homework-frontend-template \
     --tags=homework-frontend-tag,allow-health-check \
     --boot-disk-size=20GB \
     --boot-disk-type=pd-balanced \
-    --boot-disk-device-name=homework-frontend-template \
-    --image=debian-10-buster-v20210721 \
-    --image-project=debian-cloud
-
-# create instance template for Nginx (CentOS 7)
-gcloud compute instance-templates create homework-frontend-template \
-    --machine-type=g1-small \
-    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-web-subnet \
-    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/nginx-startup.sh,WEB_BUCKET=web-$BUCKETS_NAME,LB_INTERNAL_IP=$(gcloud compute forwarding-rules describe homework-tomcat-frontend-lb --region=us-central1 --format="value(IPAddress)") \
-    --region=us-central1 \
-    --tags=homework-frontend-tag,allow-health-check \
-    --boot-disk-size=20GB \
-    --boot-disk-type=pd-balanced \
-    --boot-disk-device-name=homework-frontend-template \
-    --image=centos-7-v20210721 \
-    --image-project=centos-cloud
+    --boot-disk-device-name=homework-frontend-template 
 
 
 # create instance group for Nginx

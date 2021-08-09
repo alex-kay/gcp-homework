@@ -1,17 +1,7 @@
 #!/bin/bash
 
-# detecting OS distro and installing nginx
-
-. /etc/os-release
-if [[ "$ID" == "centos" ]]; then
-        sudo yum install nginx -y
-        SITE_PATH="/etc/nginx/conf.d/default.conf"
-elif [[ "$ID" == "debian" ]]; then
-        sudo apt update
-        sudo apt install nginx -y
-        SITE_PATH="/etc/nginx/sites-enabled/default"
-fi
-
+sudo apt update
+sudo apt install nginx -y
 
 # BEGIN install Stackdriver agents
 #
@@ -34,7 +24,7 @@ sudo service stackdriver-agent restart
 LB_INTERNAL_IP=$(curl http://metadata/computeMetadata/v1/instance/attributes/LB_INTERNAL_IP -H "Metadata-Flavor: Google")
 WEB_BUCKET=$(curl http://metadata/computeMetadata/v1/instance/attributes/WEB_BUCKET -H "Metadata-Flavor: Google")
 
-cat << EOF > $SITE_PATH
+cat << EOF > /etc/nginx/sites-enabled/default
 
 server {
         listen 80 default_server;
@@ -50,9 +40,9 @@ server {
         location / {
                 # First attempt to serve request as file, then
                 # as directory, then fall back to displaying a 404.
-                try_files $uri $uri/ =404;
-                proxy_pass http://$LB_INTERNAL_IP:8080;
+                # try_files $uri $uri/ =404;
                 proxy_http_version 1.1;
+                proxy_pass http://$LB_INTERNAL_IP:8080;
         }
         location /demo/ {
                 proxy_http_version 1.1;
