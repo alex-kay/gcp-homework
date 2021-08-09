@@ -9,7 +9,7 @@
 5. ~~add one more MIG for frontend with nginx, by path /demo/ show demo app from bucket, by path /img/picture.jpg show file from bucket~~
 6. ~~setup export of nginx logs to bucket~~/BigQuery
 7. Заменить агента для экспорта логов ( если был гугловский - переключится на стронее решение и наоборот )
-8. Заменить базовую операционную систему б группе бекенда ( ubuntu <-> centos )
+8. ~~Заменить базовую операционную систему б группе бекенда ( ubuntu <-> centos )~~
 9. Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x
 10. Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес
 11. Почитать про pub/sub и события
@@ -284,6 +284,12 @@ gcloud compute forwarding-rules create http-content-rule \
     --global \
     --target-http-proxy=homework-frontend-lb-proxy \
     --ports=80
+
+# get external load balancer address
+EXT_LB_IP=$(gcloud compute addresses describe homework-nginx-lb-ip --global --format="value(address)")
+echo Visit http://$EXT_LB_IP/ for Tomcat default page
+echo Visit http://$EXT_LB_IP/demo/ for demo application
+echo Visit http://$EXT_LB_IP/img/picture.jpg for image
 
 ```
 
