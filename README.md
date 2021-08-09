@@ -178,7 +178,8 @@ gcloud compute backend-services create homework-tomcat-backend-service \
     --protocol=HTTP \
     --port-name=tomcat-service \
     --health-checks=homework-tomcat-check \
-    --region=us-central1
+    --region=us-central1 \
+    --connection-draining-timeout=360
 
 # add backend service to instance group
 gcloud compute backend-services add-backend homework-tomcat-backend-service \
@@ -257,7 +258,8 @@ gcloud compute backend-services create homework-web-backend-service \
     --protocol=HTTP \
     --port-name=http \
     --health-checks=homework-nginx-health-check \
-    --global
+    --global \
+    --connection-draining-timeout=360
 
 # add instance group to backend
 gcloud compute backend-services add-backend homework-web-backend-service \
@@ -303,12 +305,24 @@ echo Visit http://$EXT_LB_IP/img/picture.jpg for image
 
 ```bash
 
-# create sink
-gcloud logging sinks create homework-log-sink storage.googleapis.com/log-$BUCKETS_NAME \
+# create sink to Storage bucket
+gcloud logging sinks create homework-log-bucket-sink storage.googleapis.com/log-$BUCKETS_NAME \
     --log-filter='resource.type="gce_instance" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access"'
 
 # add sink serviceaccount as admin of log bucket
-gsutil iam ch $(gcloud logging sinks describe homework-log-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://log-$BUCKETS_NAME
+gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://log-$BUCKETS_NAME
+
+# create bigQuery dataset for logs
+# bq --location=us-central1 mk $GCLOUD_PROJECT:homeworklogdataset
+
+# create sink to bigQuery
+# gcloud logging sinks create homework-log-bq-sink \
+#     bigquery.googleapis.com/projects/$GCLOUD_PROJECT/datasets/homeworklogdataset \
+#     --log-filter='resource.type="gce_instance" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access"'
+
+# add bigquery role to sink serviceaccount
+# TODO
+#
 
 ```
 

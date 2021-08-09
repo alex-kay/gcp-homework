@@ -1,10 +1,11 @@
 #!/bin/bash
 
 sudo apt update
-sudo apt install nginx -y
+sudo apt install apt-transport-https wget nginx -y
 
 # BEGIN install Stackdriver agents
 #
+
 curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
 sudo bash add-monitoring-agent-repo.sh --also-install
 
@@ -18,8 +19,58 @@ sudo service nginx reload
 (cd /etc/stackdriver/collectd.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/collectd.d/nginx.conf)
 
 sudo service stackdriver-agent restart
+
 #
 # END install Stackdriver agents
+
+# BEGIN installing Filebeat and Logstash
+#
+
+# wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+# echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
+# sudo apt update && sudo apt install filebeat logstash -y
+
+# sudo systemctl start filebeat
+# sudo systemctl enable filebeat
+# sudo systemctl start logstash
+# sudo systemctl enable logstash
+
+# # example logging file
+# wget https://download.elastic.co/demos/logstash/gettingstarted/logstash-tutorial.log.gz
+# gzip -d logstash-tutorial.log.gz
+# cp logstash-tutorial.log /tmp/
+# cat << EOF > /etc/filebeat/filebeat.yml
+
+# filebeat.inputs:
+# - type: log
+#   paths:
+#     - /tmp/logstash-tutorial.log 
+# output.logstash:
+#   hosts: ["localhost:5044"]
+
+# EOF
+
+# sudo filebeat -e -c /etc/filebeat/filebeat.yml -d "publish" 
+
+# cat << EOF > /tmp/logstash.conf
+
+# input {
+#         beats {
+#                 port => "5044"
+#         }
+# }
+# output {
+#         stdout { codec => rubydebug }
+# }
+
+# EOF
+
+# sudo /usr/share/logstash/bin/logstash -f /tmp/logstash.conf --config.test_and_exit
+
+
+
+#
+# END installing Filebeat and Logstash
 
 LB_INTERNAL_IP=$(curl http://metadata/computeMetadata/v1/instance/attributes/LB_INTERNAL_IP -H "Metadata-Flavor: Google")
 WEB_BUCKET=$(curl http://metadata/computeMetadata/v1/instance/attributes/WEB_BUCKET -H "Metadata-Flavor: Google")
