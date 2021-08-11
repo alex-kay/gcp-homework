@@ -11,7 +11,7 @@
 7. Заменить агента для экспорта логов ( если был гугловский - переключится на стронее решение и наоборот )
 8. ~~Заменить базовую операционную систему б группе бекенда ( ubuntu <-> centos )~~
 9. Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x
-10. Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес
+10. ~~Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес~~
 11. Почитать про pub/sub и события
 
 ## 1. Create bucket for application files and another one for static web files (think about permissions)
@@ -108,20 +108,20 @@ gcloud compute firewall-rules create homework-allow-health-check \
 ```bash
 
 # create instance template for Tomcat (Default Debian 10 image)
-# gcloud compute instance-templates create homework-backend-template \
-#     --machine-type=g1-small \
-#     --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-app-subnet \
-#     --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
-#     --region=us-central1 \
-#     --tags=homework-backend-tag,allow-health-check \
-#     --boot-disk-size=20GB \
-#     --boot-disk-type=pd-balanced \
-#     --boot-disk-device-name=homework-backend-template \
-#     --image=debian-10-buster-v20210721 \
-#     --image-project=debian-cloud
+gcloud compute instance-templates create homework-backend-template-debian \
+    --machine-type=g1-small \
+    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-app-subnet \
+    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
+    --region=us-central1 \
+    --tags=homework-backend-tag,allow-health-check \
+    --boot-disk-size=20GB \
+    --boot-disk-type=pd-balanced \
+    --boot-disk-device-name=homework-backend-template \
+    --image=debian-10-buster-v20210721 \
+    --image-project=debian-cloud
 
 # or same, but with Centos 7 image
-gcloud compute instance-templates create homework-backend-template \
+gcloud compute instance-templates create homework-backend-template-centos \
     --machine-type=g1-small \
     --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-app-subnet \
     --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/tomcat-startup.sh,APP_BUCKET=app-$BUCKETS_NAME \
@@ -139,10 +139,10 @@ gcloud compute instance-templates create homework-backend-template \
 
 ```bash
 
-# create instance group for Tomcat
+# create instance group for Tomcat (chose Debian template)
 gcloud compute instance-groups managed create homework-backend-group-1 \
     --base-instance-name=homework-backend-group-1 \
-    --template=homework-backend-template \
+    --template=homework-backend-template-debian \
     --size=1 \
     --zone=us-central1-a
 
@@ -170,7 +170,9 @@ gcloud compute instance-groups managed set-named-ports "homework-backend-group-1
 
 
 # create health check for tomcat
-gcloud compute health-checks create tcp homework-tomcat-check --port 8080
+gcloud compute health-checks create http homework-tomcat-check \
+    --port 8080 \
+    --region=us-central1
 
 # backend service 
 gcloud compute backend-services create homework-tomcat-backend-service \
@@ -333,3 +335,24 @@ gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format=
 - also to BigQuery (created sink via console):
 
 ![bigQuery](screens/Screenshot%202021-08-04%20at%2006.04.45.png)
+
+## 7. Заменить агента для экспорта логов
+
+## 8. Заменить базовую операционную систему б группе бекенда
+
+```bash
+
+# update Tomcat group to use Centos template
+gcloud beta compute instance-groups managed rolling-action start-update homework-backend-group-1 \
+    --project=$GCLOUD_PROJECT \
+    --type='proactive' \
+    --max-surge=1 \
+    --max-unavailable=1 \
+    --min-ready=0 \
+    --minimal-action='replace' \
+    --most-disruptive-allowed-action='replace' \
+    --replacement-method='substitute' \
+    --version=template=projects/$GCLOUD_PROJECT/global/instanceTemplates/homework-backend-template-centos \
+    --zone=us-central1-a
+
+```
