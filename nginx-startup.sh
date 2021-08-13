@@ -6,34 +6,40 @@ sudo apt install apt-transport-https wget nginx -y
 # BEGIN install Stackdriver agents
 #
 
-curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
-sudo bash add-monitoring-agent-repo.sh --also-install
+# curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
+# sudo bash add-monitoring-agent-repo.sh --also-install
 
-curl -sSO https://dl.google.com/cloudagents/add-logging-agent-repo.sh
-sudo bash add-logging-agent-repo.sh --also-install
+# curl -sSO https://dl.google.com/cloudagents/add-logging-agent-repo.sh
+# sudo bash add-logging-agent-repo.sh --also-install
 
-(cd /etc/nginx/conf.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/nginx/conf.d/status.conf)
+# (cd /etc/nginx/conf.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/nginx/conf.d/status.conf)
 
-sudo service nginx reload
+# sudo service nginx reload
 
-(cd /etc/stackdriver/collectd.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/collectd.d/nginx.conf)
+# (cd /etc/stackdriver/collectd.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/collectd.d/nginx.conf)
 
-sudo service stackdriver-agent restart
+# sudo service stackdriver-agent restart
 
 #
 # END install Stackdriver agents
 
-# BEGIN installing Filebeat and Logstash
+# BEGIN installing Filebeat and ELK
 #
 
-# wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
-# echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
-# sudo apt update && sudo apt install filebeat logstash -y
+sudo apt install default-jre -y
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
+sudo apt update
+sudo apt install filebeat -y
 
-# sudo systemctl start filebeat
-# sudo systemctl enable filebeat
-# sudo systemctl start logstash
-# sudo systemctl enable logstash
+sudo systemctl enable filebeat
+
+sudo filebeat modules enable nginx
+
+sudo filebeat setup -e
+
+sudo systemctl start filebeat
+
 
 # # example logging file
 # wget https://download.elastic.co/demos/logstash/gettingstarted/logstash-tutorial.log.gz

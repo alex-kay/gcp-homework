@@ -10,7 +10,7 @@
 6. ~~setup export of nginx logs to bucket~~/BigQuery
 7. Заменить агента для экспорта логов ( если был гугловский - переключится на стронее решение и наоборот )
 8. ~~Заменить базовую операционную систему б группе бекенда ( ubuntu <-> centos )~~
-9. Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x
+9. ~~Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x~~
 10. ~~Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес~~
 11. Почитать про pub/sub и события
 
@@ -180,6 +180,7 @@ gcloud compute backend-services create homework-tomcat-backend-service \
     --protocol=HTTP \
     --port-name=tomcat-service \
     --health-checks=homework-tomcat-check \
+    --health-checks-region=us-central1 \
     --region=us-central1 \
     --connection-draining-timeout=360
 
@@ -335,8 +336,6 @@ gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format=
 - also to BigQuery (created sink via console):
 
 ![bigQuery](screens/Screenshot%202021-08-04%20at%2006.04.45.png)
-
-## 7. Заменить агента для экспорта логов
 
 ## 8. Заменить базовую операционную систему б группе бекенда
 
