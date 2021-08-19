@@ -13,6 +13,7 @@
 9. ✔️Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x
 10. ✔️Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес
 11. ✔️Почитать про pub/sub и события
+
 * ❌Создать функцию (python3) которая будет запускаться через pubsub и выводить сообщение
 * ❌Настроить атоматический запуск этой функции каждый час
 * ❌(опционально) - функция должна подключаться к BigQuery и выводить статистику по http ответам за последний час
@@ -302,7 +303,7 @@ echo Visit http://$EXT_LB_IP/img/picture.jpg for image
 
 ```
 
-- external load balancer IP in browser:
+* external load balancer IP in browser:
 
 ![/demo/](screens/Screenshot%202021-08-04%20at%2013.42.24.png)
 
@@ -333,11 +334,11 @@ gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format=
 
 ```
 
-- logs in bucket:
+* logs in bucket:
 
 ![log-bucket](screens/Screenshot%202021-08-04%20at%2013.55.09.png)
 
-- also to BigQuery (created sink via console):
+* also to BigQuery (created sink via console):
 
 ![bigQuery](screens/Screenshot%202021-08-04%20at%2006.04.45.png)
 
@@ -359,3 +360,13 @@ gcloud beta compute instance-groups managed rolling-action start-update homework
     --zone=us-central1-a
 
 ```
+
+## Создать функцию (python3) которая будет запускаться через pubsub и выводить сообщение
+
+![cloudFunction](screens/Screenshot%202021-08-19%20231823.png)
+
+## Настроить атоматический запуск этой функции каждый час
+
+* Done this using Cloud Scheduler, which triggers PubSub topic that trigger the function
+
+![cloudScheduler](screens/Screenshot%202021-08-19%20231450.png)
