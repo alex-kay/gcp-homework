@@ -8,8 +8,7 @@ sudo apt update
 sudo apt install elasticsearch -y
 # sudo vim /etc/elasticsearch/elasticsearch.yml network.host: "localhost" http.port:9200 cluster.initial_master_nodes: ["10.128.0.2"]
 # sudo service elasticsearch start
-VM_PRIVATE_IP=$(curl http://metadata/computeMetadata/v1/instance/network-interfaces/0/ip -H "Me
-tadata-Flavor: Google")
+VM_PRIVATE_IP=$(hostname -I)
 
 cat << EOF > /etc/elasticsearch/elasticsearch.yml
 network.host: 0.0.0.0
