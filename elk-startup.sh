@@ -7,27 +7,20 @@ echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee 
 sudo apt update
 sudo apt install default-jre -y
 sudo apt install elasticsearch -y
-# sudo vim /etc/elasticsearch/elasticsearch.yml network.host: "localhost" http.port:9200 cluster.initial_master_nodes: ["10.128.0.2"]
-# sudo service elasticsearch start
-# VM_PRIVATE_IP=$(hostname -I)
 
 sudo cat << EOF > /etc/elasticsearch/elasticsearch.yml
 network.host: 0.0.0.0
+http.port: 9200
 cluster.initial_master_nodes: ["$(hostname -I | awk '{gsub(/[ \t]+$/,""); print $0}')"]
 EOF
 
-sudo service elasticsearch start
-
-sudo systemctl enable elasticsearch
-
 sudo apt install kibana -y
-
-sudo service kibana start
-
-sudo systemctl enable kibana
 
 sudo apt install logstash -y
 
-sudo service logstash start
-
-sudo systemctl enable logstash
+# sudo service elasticsearch start
+# sudo systemctl enable elasticsearch
+# sudo service kibana start
+# sudo systemctl enable kibana
+# sudo service logstash start
+# sudo systemctl enable logstash

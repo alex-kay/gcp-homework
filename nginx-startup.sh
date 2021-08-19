@@ -6,25 +6,22 @@ sudo apt install apt-transport-https wget nginx -y
 # BEGIN install Stackdriver agents
 #
 
-# curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
-# sudo bash add-monitoring-agent-repo.sh --also-install
+curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
+sudo bash add-monitoring-agent-repo.sh --also-install
 
-# curl -sSO https://dl.google.com/cloudagents/add-logging-agent-repo.sh
-# sudo bash add-logging-agent-repo.sh --also-install
+curl -sSO https://dl.google.com/cloudagents/add-logging-agent-repo.sh
+sudo bash add-logging-agent-repo.sh --also-install
 
-# (cd /etc/nginx/conf.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/nginx/conf.d/status.conf)
+(cd /etc/nginx/conf.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/nginx/conf.d/status.conf)
 
-# sudo service nginx reload
+sudo service nginx reload
 
-# (cd /etc/stackdriver/collectd.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/collectd.d/nginx.conf)
+(cd /etc/stackdriver/collectd.d/ && sudo curl -O https://raw.githubusercontent.com/Stackdriver/stackdriver-agent-service-configs/master/etc/collectd.d/nginx.conf)
 
-# sudo service stackdriver-agent restart
+sudo service stackdriver-agent restart
 
 #
 # END install Stackdriver agents
-
-# BEGIN installing Filebeat and ELK
-#
 
 sudo apt install default-jre -y
 wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
