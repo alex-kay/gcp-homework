@@ -369,4 +369,33 @@ gcloud beta compute instance-groups managed rolling-action start-update homework
 
 * Done this using Cloud Scheduler, which triggers PubSub topic that trigger the function
 
+```bash
+
+# create a topic
+gcloud pubsub topics create homework-topic
+
+# create a subscribtion
+gcloud pubsub subscriptions create homework-sub \
+    --topic homework-topic
+
+# create a scheduled job
+gcloud scheduler jobs create pubsub homework-job \
+    --schedule="0 * * * *" \
+    --topic=homework-topic \
+    --message-body="Hello, it's been an hour!"
+
+# create function
+cd function
+
+gcloud functions deploy homework-function \
+    --region=us-central1 \
+    --runtime=python39 \
+    --trigger-topic=homework-topic
+
+cd ..
+
+
+
+```
+
 ![cloudScheduler](screens/Screenshot%202021-08-19%20231450.png)
