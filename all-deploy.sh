@@ -251,11 +251,11 @@ echo Visit http://$EXT_LB_IP/img/picture.jpg for image
 
 
 # create sink to Storage bucket
-gcloud logging sinks create homework-log-bucket-sink storage.googleapis.com/log-gcp-homework-bucket-$BUCKETS_NAME \
+gcloud logging sinks create homework-log-bucket-sink storage.googleapis.com/log-$BUCKETS_NAME \
     --log-filter='resource.type="gce_instance" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access"'
 
 # add sink serviceaccount as admin of log bucket
-gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://log-gcp-homework-bucket-$BUCKETS_NAME
+gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://log-$BUCKETS_NAME
 
 # create bigQuery dataset for logs
 # bq --location=us-central1 mk $GCLOUD_PROJECT:homeworklogdataset

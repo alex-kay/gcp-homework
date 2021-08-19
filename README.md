@@ -2,21 +2,21 @@
 
 ## steps
 
-1. ~~Create bucket for application files and another one for static web files (think about permissions)~~
-2. ~~create MIG for backend with installed tomcat and on boot download demo application from bucket~~
-3. ~~setup autoscaling by CPU (think about scale down)~~
-4. ~~create LB~~
-5. ~~add one more MIG for frontend with nginx, by path /demo/ show demo app from bucket, by path /img/picture.jpg show file from bucket~~
-6. ~~setup export of nginx logs to bucket~~/BigQuery
-7. Заменить агента для экспорта логов ( если был гугловский - переключится на стронее решение и наоборот )
-8. ~~Заменить базовую операционную систему б группе бекенда ( ubuntu <-> centos )~~
-9. ~~Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x~~
-10. ~~Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес~~
-11. Почитать про pub/sub и события
-* Создать функцию (python3) которая будет запускаться через pubsub и выводить сообщение
-* Настроить атоматический запуск этой функции каждый час
-* (опционально) - функция должна подключаться к BigQuery и выводить статистику по http ответам за последний час
-* Создать еще одну фунцию которая будет запускаться каждый раз когда nginx выдает ошибку 404 и выводить текст ошибки
+1. ✔️Create bucket for application files and another one for static web files (think about permissions)
+2. ✔️create MIG for backend with installed tomcat and on boot download demo application from bucket
+3. ✔️setup autoscaling by CPU (think about scale down)
+4. ✔️create LB
+5. ✔️add one more MIG for frontend with nginx, by path /demo/ show demo app from bucket, by path /img/picture.jpg show file from bucket
+6. ✔️setup export of nginx logs to bucket/BigQuery
+7. ❌Заменить агента для экспорта логов ( если был гугловский - переключится на стронее решение и наоборот )
+8. ✔️Заменить базовую операционную систему б группе бекенда ( ubuntu <-> centos )
+9. ✔️Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x
+10. ✔️Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес
+11. ✔️Почитать про pub/sub и события
+* ❌Создать функцию (python3) которая будет запускаться через pubsub и выводить сообщение
+* ❌Настроить атоматический запуск этой функции каждый час
+* ❌(опционально) - функция должна подключаться к BigQuery и выводить статистику по http ответам за последний час
+* ❌Создать еще одну фунцию которая будет запускаться каждый раз когда nginx выдает ошибку 404 и выводить текст ошибки
 
 ## 1. Create bucket for application files and another one for static web files (think about permissions)
 
@@ -313,11 +313,11 @@ echo Visit http://$EXT_LB_IP/img/picture.jpg for image
 ```bash
 
 # create sink to Storage bucket
-gcloud logging sinks create homework-log-bucket-sink storage.googleapis.com/log-gcp-homework-bucket-$BUCKETS_NAME \
+gcloud logging sinks create homework-log-bucket-sink storage.googleapis.com/log-$BUCKETS_NAME \
     --log-filter='resource.type="gce_instance" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access" AND log_name="projects/$GCLOUD_PROJECT/logs/nginx-access"'
 
 # add sink serviceaccount as admin of log bucket
-gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://log-gcp-homework-bucket-$BUCKETS_NAME
+gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format="value(writerIdentity)"):roles/storage.objectAdmin gs://log-$BUCKETS_NAME
 
 # create bigQuery dataset for logs
 # bq --location=us-central1 mk $GCLOUD_PROJECT:homeworklogdataset
