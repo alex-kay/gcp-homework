@@ -5,14 +5,15 @@ sudo apt install apt-transport-https wget -y
 wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
 echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
 sudo apt update
+sudo apt install default-jre -y
 sudo apt install elasticsearch -y
 # sudo vim /etc/elasticsearch/elasticsearch.yml network.host: "localhost" http.port:9200 cluster.initial_master_nodes: ["10.128.0.2"]
 # sudo service elasticsearch start
-VM_PRIVATE_IP=$(hostname -I)
+# VM_PRIVATE_IP=$(hostname -I)
 
-cat << EOF > /etc/elasticsearch/elasticsearch.yml
+sudo cat << EOF > /etc/elasticsearch/elasticsearch.yml
 network.host: 0.0.0.0
-cluster.initial_master_nodes: ["$VM_PRIVATE_IP"]
+cluster.initial_master_nodes: ["$(hostname -I | awk '{gsub(/[ \t]+$/,""); print $0}')"]
 EOF
 
 sudo service elasticsearch start
@@ -25,7 +26,6 @@ sudo service kibana start
 
 sudo systemctl enable kibana
 
-sudo apt install default-jre -y
 sudo apt install logstash -y
 
 sudo service logstash start

@@ -1,26 +1,4 @@
-# gcp-homework
-
-## steps
-
-1. ~~Create bucket for application files and another one for static web files (think about permissions)~~
-2. ~~create MIG for backend with installed tomcat and on boot download demo application from bucket~~
-3. ~~setup autoscaling by CPU (think about scale down)~~
-4. ~~create LB~~
-5. ~~add one more MIG for frontend with nginx, by path /demo/ show demo app from bucket, by path /img/picture.jpg show file from bucket~~
-6. ~~setup export of nginx logs to bucket~~/BigQuery
-7. Заменить агента для экспорта логов ( если был гугловский - переключится на стронее решение и наоборот )
-8. ~~Заменить базовую операционную систему б группе бекенда ( ubuntu <-> centos )~~
-9. ~~Настроить внутренний LB таким образом, чтоб он передавал трафик только в случае если на целевом хосте tomcat возвращает http status 20x~~
-10. ~~Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес~~
-11. Почитать про pub/sub и события
-* Создать функцию (python3) которая будет запускаться через pubsub и выводить сообщение
-* Настроить атоматический запуск этой функции каждый час
-* (опционально) - функция должна подключаться к BigQuery и выводить статистику по http ответам за последний час
-* Создать еще одну фунцию которая будет запускаться каждый раз когда nginx выдает ошибку 404 и выводить текст ошибки
-
-## 1. Create bucket for application files and another one for static web files (think about permissions)
-
-```bash
+#!/bin/bash
 
 # get project id to reference later
 GCLOUD_PROJECT=$(gcloud config get-value project)
@@ -105,11 +83,6 @@ gcloud compute firewall-rules create homework-allow-health-check \
     --target-tags=allow-health-check \
     --rules=tcp:80,tcp:8080
 
-```
-
-## 2. create MIG for backend with installed tomcat and on boot download demo application from bucket
-
-```bash
 
 # create instance template for Tomcat (Default Debian 10 image)
 gcloud compute instance-templates create homework-backend-template-debian \
@@ -137,11 +110,6 @@ gcloud compute instance-templates create homework-backend-template-centos \
     --image=centos-7-v20210721 \
     --image-project=centos-cloud
 
-```
-
-## 3. setup autoscaling by CPU (think about scale down)
-
-```bash
 
 # create instance group for Tomcat (chose Debian template)
 gcloud compute instance-groups managed create homework-backend-group-1 \
@@ -159,15 +127,6 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-backend-gr
     --target-cpu-utilization "0.6" \
     --mode "on"
 
-```
-
-## 4. create LB
-
-![tomcat lb](screens/Screenshot%202021-08-04%20at%2013.39.00.png)
-
-```bash
-
-# add named 8080 port
 gcloud compute instance-groups managed set-named-ports "homework-backend-group-1" \
     --zone "us-central1-a" \
     --named-ports=tomcat-service:8080
@@ -216,11 +175,6 @@ gcloud compute forwarding-rules create homework-tomcat-frontend-lb \
   --target-http-proxy=homework-backend-lb-proxy \
   --target-http-proxy-region=us-central1
 
-```
-
-## 5. add one more MIG for frontend with nginx, by path /demo/ show demo app from bucket, by path /img/picture.jpg show file from bucket
-
-```bash
 
 # create instance template for Nginx
 gcloud compute instance-templates create homework-frontend-template \
@@ -250,11 +204,6 @@ gcloud beta compute instance-groups managed set-autoscaling "homework-frontend-g
     --target-cpu-utilization "0.6" \
     --mode "on"
 
-```
-
-![nginx lb](screens/Screenshot%202021-08-04%20at%2013.39.48.png)
-
-```bash
 
 # create nginx health check
 gcloud compute health-checks create http homework-nginx-health-check \
@@ -300,17 +249,6 @@ echo Visit http://$EXT_LB_IP/ for Tomcat default page
 echo Visit http://$EXT_LB_IP/demo/ for demo application
 echo Visit http://$EXT_LB_IP/img/picture.jpg for image
 
-```
-
-- external load balancer IP in browser:
-
-![/demo/](screens/Screenshot%202021-08-04%20at%2013.42.24.png)
-
-![/img/picture.jpg](screens/Screenshot%202021-08-04%20at%2013.42.35.png)
-
-## 6. setup export of nginx logs to bucket/BigQuery
-
-```bash
 
 # create sink to Storage bucket
 gcloud logging sinks create homework-log-bucket-sink storage.googleapis.com/log-gcp-homework-bucket-$BUCKETS_NAME \
@@ -329,21 +267,7 @@ gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format=
 
 # add bigquery role to sink serviceaccount
 # TODO
-#
 
-```
-
-- logs in bucket:
-
-![log-bucket](screens/Screenshot%202021-08-04%20at%2013.55.09.png)
-
-- also to BigQuery (created sink via console):
-
-![bigQuery](screens/Screenshot%202021-08-04%20at%2006.04.45.png)
-
-## 8. Заменить базовую операционную систему б группе бекенда
-
-```bash
 
 # update Tomcat group to use Centos template
 gcloud beta compute instance-groups managed rolling-action start-update homework-backend-group-1 \
@@ -358,4 +282,3 @@ gcloud beta compute instance-groups managed rolling-action start-update homework
     --version=template=projects/$GCLOUD_PROJECT/global/instanceTemplates/homework-backend-template-centos \
     --zone=us-central1-a
 
-```
