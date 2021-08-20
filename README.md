@@ -363,7 +363,7 @@ gcloud beta compute instance-groups managed rolling-action start-update homework
 
 ## Создать функцию (python3) которая будет запускаться через pubsub и выводить сообщение
 
-![cloudFunction](screens/Screenshot%202021-08-19%20231823.png)
+![cloudFunction](screens/Screenshot%202021-08-20%20003443.png)
 
 ## Настроить атоматический запуск этой функции каждый час
 
@@ -390,12 +390,24 @@ cd function
 gcloud functions deploy homework-function \
     --region=us-central1 \
     --runtime=python39 \
-    --trigger-topic=homework-topic
+    --trigger-topic=homework-topic \
+    --entry-point=hello_pubsub
 
 cd ..
 
-
-
 ```
 
-![cloudScheduler](screens/Screenshot%202021-08-19%20231450.png)
+![cloudScheduler](screens/Screenshot%202021-08-20%20003045.png)
+
+## Создать еще одну фунцию которая будет запускаться каждый раз когда nginx выдает ошибку 404 и выводить текст ошибки
+
+```bash
+
+#something like that, need to make it a daemon
+tail -f /var/log/nginx/access.log | while read line; do 
+    if [[ $(echo $line | grep "404") ]]; then
+        gcloud pubsub topics publish homework-topic --message="$line";
+    fi
+done
+
+```

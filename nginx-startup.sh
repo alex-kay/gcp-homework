@@ -23,19 +23,19 @@ sudo service stackdriver-agent restart
 #
 # END install Stackdriver agents
 
-sudo apt install default-jre -y
-wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
-echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
-sudo apt update
-sudo apt install filebeat -y
+# sudo apt install default-jre -y
+# wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+# echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
+# sudo apt update
+# sudo apt install filebeat -y
 
-sudo systemctl enable filebeat
+# sudo systemctl enable filebeat
 
-sudo filebeat modules enable nginx
+# sudo filebeat modules enable nginx
 
-sudo filebeat setup -e
+# sudo filebeat setup -e
 
-sudo systemctl start filebeat
+# sudo systemctl start filebeat
 
 
 # # example logging file
@@ -111,3 +111,38 @@ server {
 EOF
 
 sudo systemctl restart nginx
+
+
+# creating script to watch nginx log file for 404 and sending log to pubsub
+
+cat << EOF > /usr/bin/pubsub404
+#!/bin/bash
+
+tail -f /var/log/nginx/access.log | while read line; do 
+    if [[ \$(echo \$line | grep "404") ]]; then
+        gcloud pubsub topics publish homework-topic --message="\$line";
+    fi
+done
+
+EOF
+
+sudo chmod +x /usr/bin/pubsub404
+
+# making a service of it
+
+cat << EOF > /etc/systemd/system/pubsub404.service
+
+[Unit]
+Description=Nginx log watcher
+
+[Service]
+ExecStart=/usr/bin/pubsub404
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target 
+
+EOF
+
+sudo systemctl start pubsub404.service
+sudo systemctl enable pubsub404.service
