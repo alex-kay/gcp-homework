@@ -14,8 +14,8 @@
 10. ✔️Разобраться как можно при scale down запретить убивать конкретную ноду, на которой сейчас крутиться длинний процес
 11. ✔️Почитать про pub/sub и события
 
-* ❌Создать функцию (python3) которая будет запускаться через pubsub и выводить сообщение
-* ❌Настроить атоматический запуск этой функции каждый час
+* ✔️Создать функцию (python3) которая будет запускаться через pubsub и выводить сообщение
+* ✔️Настроить атоматический запуск этой функции каждый час
 * ❌(опционально) - функция должна подключаться к BigQuery и выводить статистику по http ответам за последний час
 * ❌Создать еще одну фунцию которая будет запускаться каждый раз когда nginx выдает ошибку 404 и выводить текст ошибки
 
@@ -342,6 +342,25 @@ gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format=
 
 ![bigQuery](screens/Screenshot%202021-08-04%20at%2006.04.45.png)
 
+## Заменить агента для экспорта логов ( если был гугловский - переключится на стронее решение и наоборот )
+
+```bash
+
+gcloud beta compute instances create elk-instance \
+    --project=$GCLOUD_PROJECT \
+    --zone=us-central1-a \
+    --machine-type=e2-medium \
+    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/elk-startup.sh \
+    --subnet=default \
+    --tags=elk \
+    --image=debian-10-buster-v20210817 \
+    --image-project=debian-cloud \
+    --boot-disk-size=10GB \
+    --boot-disk-type=pd-balanced \
+    --boot-disk-device-name=elk-instance
+
+```
+
 ## 8. Заменить базовую операционную систему б группе бекенда
 
 ```bash
@@ -401,13 +420,4 @@ cd ..
 
 ## Создать еще одну фунцию которая будет запускаться каждый раз когда nginx выдает ошибку 404 и выводить текст ошибки
 
-```bash
-
-#something like that, need to make it a daemon
-tail -f /var/log/nginx/access.log | while read line; do 
-    if [[ $(echo $line | grep "404") ]]; then
-        gcloud pubsub topics publish homework-topic --message="$line";
-    fi
-done
-
-```
+- made a daemon function in nginx startup script
