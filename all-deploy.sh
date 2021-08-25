@@ -268,6 +268,28 @@ gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format=
 # add bigquery role to sink serviceaccount
 # TODO
 
+# add firewall rule for elk instance
+gcloud compute firewall-rules create homework-allow-elk \
+    --direction=INGRESS \
+    --priority=1000 \
+    --network=homework-vpc \
+    --action=ALLOW \
+    --rules=tcp:5601,9200 \
+    --source-ranges=0.0.0.0/0
+
+# add instance with ELK
+gcloud beta compute instances create elk-instance \
+    --project=$GCLOUD_PROJECT \
+    --zone=us-central1-a \
+    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-web-subnet \
+    --machine-type=e2-medium \
+    --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/elk-startup.sh \
+    --tags=elk \
+    --image=debian-10-buster-v20210817 \
+    --image-project=debian-cloud \
+    --boot-disk-size=10GB \
+    --boot-disk-type=pd-balanced \
+    --boot-disk-device-name=elk-instance
 
 # update Tomcat group to use Centos template
 gcloud beta compute instance-groups managed rolling-action start-update homework-backend-group-1 \
@@ -282,3 +304,26 @@ gcloud beta compute instance-groups managed rolling-action start-update homework
     --version=template=projects/$GCLOUD_PROJECT/global/instanceTemplates/homework-backend-template-centos \
     --zone=us-central1-a
 
+# create a topic
+gcloud pubsub topics create homework-topic
+
+# create a subscribtion
+gcloud pubsub subscriptions create homework-sub \
+    --topic homework-topic
+
+# create a scheduled job
+gcloud scheduler jobs create pubsub homework-job \
+    --schedule="0 * * * *" \
+    --topic=homework-topic \
+    --message-body="Hello, it's been an hour!"
+
+# create function
+cd function
+
+gcloud functions deploy homework-function \
+    --region=us-central1 \
+    --runtime=python39 \
+    --trigger-topic=homework-topic \
+    --entry-point=hello_pubsub
+
+cd ..

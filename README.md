@@ -346,18 +346,29 @@ gsutil iam ch $(gcloud logging sinks describe homework-log-bucket-sink --format=
 
 ```bash
 
+# add firewall rule for elk instance
+gcloud compute firewall-rules create homework-allow-elk \
+    --direction=INGRESS \
+    --priority=1000 \
+    --network=homework-vpc \
+    --action=ALLOW \
+    --rules=tcp:5601,9200 \
+    --source-ranges=0.0.0.0/0
+
+# add instance with ELK
 gcloud beta compute instances create elk-instance \
     --project=$GCLOUD_PROJECT \
     --zone=us-central1-a \
+    --subnet=projects/$GCLOUD_PROJECT/regions/us-central1/subnetworks/homework-web-subnet \
     --machine-type=e2-medium \
     --metadata=startup-script-url=https://storage.googleapis.com/app-$BUCKETS_NAME/elk-startup.sh \
-    --subnet=default \
     --tags=elk \
     --image=debian-10-buster-v20210817 \
     --image-project=debian-cloud \
     --boot-disk-size=10GB \
     --boot-disk-type=pd-balanced \
     --boot-disk-device-name=elk-instance
+
 
 ```
 
@@ -420,4 +431,4 @@ cd ..
 
 ## Создать еще одну фунцию которая будет запускаться каждый раз когда nginx выдает ошибку 404 и выводить текст ошибки
 
-- made a daemon function in nginx startup script
+* made a daemon function in nginx startup script
