@@ -274,7 +274,7 @@ gcloud compute firewall-rules create homework-allow-elk \
     --priority=1000 \
     --network=homework-vpc \
     --action=ALLOW \
-    --rules=tcp:5601,9200 \
+    --rules=tcp:5601,tcp:9200 \
     --source-ranges=0.0.0.0/0
 
 # add instance with ELK

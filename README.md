@@ -431,4 +431,9 @@ cd ..
 
 ## Создать еще одну фунцию которая будет запускаться каждый раз когда nginx выдает ошибку 404 и выводить текст ошибки
 
-* made a daemon function in nginx startup script
+* ~~made a daemon function in nginx startup script~~
+* created a cloud function to print 404 pub-sub messages:
+
+![cloudFn404](screens/Screenshot%202021-08-25%20205909.png)
+
+![cloudFn404](screens/Screenshot%202021-08-25%20205954.png)
